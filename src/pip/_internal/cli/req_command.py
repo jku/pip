@@ -15,9 +15,11 @@ from pip._internal.cli.command_context import CommandContextMixIn
 from pip._internal.exceptions import CommandError, PreviousBuildDirError
 from pip._internal.index.collector import LinkCollector
 from pip._internal.index.package_finder import PackageFinder
+from pip._internal.locations import USER_DATA_DIR
 from pip._internal.models.selection_prefs import SelectionPreferences
 from pip._internal.network.download import Downloader
 from pip._internal.network.session import PipSession
+from pip._internal.network.tuf import initialize_updaters
 from pip._internal.operations.prepare import RequirementPreparer
 from pip._internal.req.constructors import (
     install_req_from_editable,
@@ -57,6 +59,7 @@ class SessionCommandMixin(CommandContextMixIn):
         # type: () -> None
         super(SessionCommandMixin, self).__init__()
         self._session = None  # Optional[PipSession]
+        self._updaters = None
 
     @classmethod
     def _get_index_urls(cls, options):
@@ -122,6 +125,23 @@ class SessionCommandMixin(CommandContextMixIn):
         session.auth.prompting = not options.no_input
 
         return session
+
+    def get_tuf_updaters(self, options):
+        if self._updaters == None:
+            self._updaters = self._initialize_tuf_updaters(options)
+        return self._updaters
+
+    def _initialize_tuf_updaters(self, options):
+        index_urls = self._get_index_urls(options)
+        # TODO does user_data_dir need to be a config option as well?
+        metadata_dir = os.path.join(USER_DATA_DIR, 'tuf')
+        if options.cache_dir:
+            cache_dir = os.path.join(options.cache_dir, "tuf")
+        else:
+            cache_dir = None
+        return initialize_updaters(index_urls, metadata_dir, cache_dir)
+
+
 
 
 class IndexGroupCommand(Command, SessionCommandMixin):
