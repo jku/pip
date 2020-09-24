@@ -649,12 +649,15 @@ class LinkCollector(object):
             updater = self.updaters[index_url + '/']
             logger.debug('TUF Updater found: ' + str(updater))
             index_file = updater.download_index(project)
-            with open(index_file, "rb") as f:
-                return HTMLPage(
-                    content=f.read(),
-                    encoding=None,
-                    url=location.url, #TODO should this be the real hashed url?
-                    cache_link_parsing=False)
+            if index_file is None:
+                return None
+            else:
+                with open(index_file, "rb") as f:
+                    return HTMLPage(
+                        content=f.read(),
+                        encoding=None,
+                        url=location.url, #TODO should this be the real hashed url?
+                        cache_link_parsing=False)
         except KeyError:
             logger.debug('TUF Updater not found for index_url ' + index_url)
             return _get_html_page(location, session=self.session)
