@@ -91,11 +91,13 @@ class DownloadCommand(RequirementCommand):
         ensure_dir(options.download_dir)
 
         session = self.get_default_session(options)
+        updaters = self.get_tuf_updaters(options)
 
         target_python = make_target_python(options)
         finder = self._build_package_finder(
             options=options,
             session=session,
+            updaters=updaters,
             target_python=target_python,
         )
         build_delete = (not (options.no_clean or options.build_dir))
@@ -116,6 +118,7 @@ class DownloadCommand(RequirementCommand):
             options=options,
             req_tracker=req_tracker,
             session=session,
+            updaters=updaters,
             finder=finder,
             download_dir=options.download_dir,
             use_user_site=False,
