@@ -602,11 +602,30 @@ class LinkCollector:
         # type: () -> List[str]
         return self.search_scope.find_links
 
-    def fetch_page(self, location):
+    def fetch_project_page(self, location):
         # type: (Link) -> Optional[HTMLPage]
         """
         Fetch an HTML page containing package links.
         """
+        # Is project url available via a SecureRepository?
+        secure_repo, project = (
+            self.session.secure_repository_manager.get_secure_repository(location.url)
+        )
+        if secure_repo:
+            logger.debug('SecureRepository found: %s', str(secure_repo))
+            content = secure_repo.download_index(project)
+            if content is None:
+                return None
+            return HTMLPage(
+                content=content,
+                encoding=None,
+                url=location.url,  # TODO should this be the real URL?
+                cache_link_parsing=False
+            )
+        else:
+            logger.debug('SecureRepository not found for %s', location.url)
+            return _get_html_page(location, session=self.session)
+
         return _get_html_page(location, session=self.session)
 
     def collect_links(self, project_name):

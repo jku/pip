@@ -37,6 +37,7 @@ from pip._internal.metadata import get_default_environment
 from pip._internal.models.link import Link
 from pip._internal.network.auth import MultiDomainBasicAuth
 from pip._internal.network.cache import SafeFileCache
+from pip._internal.network.secure_repository import SecureRepositoryManager
 
 # Import ssl from compat so the initial import occurs in only one place.
 from pip._internal.utils.compat import has_tls
@@ -256,6 +257,7 @@ class PipSession(requests.Session):
         *args,  # type: Any
         retries=0,  # type: int
         cache=None,  # type: Optional[str]
+        datadir=None,  # type: Optional[str]
         trusted_hosts=(),  # type: Sequence[str]
         index_urls=None,  # type: Optional[List[str]]
         **kwargs,  # type: Any
@@ -330,6 +332,12 @@ class PipSession(requests.Session):
 
         for host in trusted_hosts:
             self.add_trusted_host(host, suppress_logging=True)
+
+        self.secure_repository_manager = SecureRepositoryManager(
+            index_urls=index_urls,
+            data_dir=datadir,
+            session=self,
+        )
 
     def update_index_urls(self, new_index_urls):
         # type: (List[str]) -> None
